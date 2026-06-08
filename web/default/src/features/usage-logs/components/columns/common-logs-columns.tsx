@@ -478,12 +478,18 @@ export function useCommonLogsColumns(isAdmin: boolean): ColumnDef<UsageLog>[] {
 
       const apiKey = log.key
       const tokenName = log.token_name
-      if (!apiKey && !tokenName) return null
+      const tokenId = log.token_id
+      
+      // If no key and no token name, check if it's a playground/session request
+      if (!apiKey && !tokenName && tokenId !== 0) return null
 
       // If no key available, show token_name as primary display
       const hasKey = apiKey && apiKey.length > 0
+      const isPlayground = tokenId === 0 && !hasKey
       const displayKey = hasKey ? (sensitiveVisible ? apiKey : '••••') : null
-      const displayName = sensitiveVisible ? tokenName : '••••'
+      const displayName = isPlayground 
+        ? (tokenName || t('Playground'))
+        : (sensitiveVisible ? tokenName : '••••')
       const other = parseLogOther(log.other)
       let group = log.group
       if (!group) group = other?.group || ''
@@ -496,8 +502,13 @@ export function useCommonLogsColumns(isAdmin: boolean): ColumnDef<UsageLog>[] {
       if (groupRatioText) metaParts.push(groupRatioText)
 
       const tooltipLines: string[] = []
-      if (hasKey && apiKey) tooltipLines.push(apiKey)
-      if (tokenName) tooltipLines.push(tokenName)
+      if (isPlayground) {
+        tooltipLines.push(t('Playground Request'))
+        if (tokenName) tooltipLines.push(tokenName)
+      } else {
+        if (hasKey && apiKey) tooltipLines.push(apiKey)
+        if (tokenName) tooltipLines.push(tokenName)
+      }
 
       return (
         <div className='flex max-w-[200px] flex-col gap-0.5'>
@@ -524,9 +535,9 @@ export function useCommonLogsColumns(isAdmin: boolean): ColumnDef<UsageLog>[] {
               )}
             </Tooltip>
           </TooltipProvider>
-          {tokenName && hasKey && (
+          {tokenName && (hasKey || isPlayground) && (
             <span className='text-muted-foreground/60 truncate [font-family:var(--font-body)] !text-xs'>
-              {sensitiveVisible ? tokenName : '••••'}
+              {isPlayground ? tokenName : (sensitiveVisible ? tokenName : '••••')}
             </span>
           )}
           {metaParts.length > 0 && (
