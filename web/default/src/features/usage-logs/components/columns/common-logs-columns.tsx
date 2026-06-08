@@ -486,7 +486,7 @@ export function useCommonLogsColumns(isAdmin: boolean): ColumnDef<UsageLog>[] {
       // If no key available, show token_name as primary display
       const hasKey = apiKey && apiKey.length > 0
       const isPlayground = tokenId === 0 && !hasKey
-      const displayKey = hasKey ? (sensitiveVisible ? apiKey : '••••') : null
+      const displayKey = hasKey ? (sensitiveVisible ? `sk-${apiKey}` : '••••') : null
       const displayName = isPlayground 
         ? (tokenName || t('Playground'))
         : (sensitiveVisible ? tokenName : '••••')
@@ -497,7 +497,7 @@ export function useCommonLogsColumns(isAdmin: boolean): ColumnDef<UsageLog>[] {
       const metaParts: string[] = []
       const groupRatioText = getGroupRatioText(other)
       if (group) {
-        metaParts.push(sensitiveVisible ? group : '••••')
+        metaParts.push(`${t('Group')}${': '}${sensitiveVisible ? group : '••••'}`)
       }
       if (groupRatioText) metaParts.push(groupRatioText)
 
@@ -506,7 +506,7 @@ export function useCommonLogsColumns(isAdmin: boolean): ColumnDef<UsageLog>[] {
         tooltipLines.push(t('Playground Request'))
         if (tokenName) tooltipLines.push(tokenName)
       } else {
-        if (hasKey && apiKey) tooltipLines.push(apiKey)
+        if (hasKey && apiKey) tooltipLines.push(`sk-${apiKey}`)
         if (tokenName) tooltipLines.push(tokenName)
       }
 
@@ -537,7 +537,7 @@ export function useCommonLogsColumns(isAdmin: boolean): ColumnDef<UsageLog>[] {
           </TooltipProvider>
           {tokenName && (hasKey || isPlayground) && (
             <span className='text-muted-foreground/60 truncate [font-family:var(--font-body)] !text-xs'>
-              {isPlayground ? tokenName : (sensitiveVisible ? tokenName : '••••')}
+              {t('Name')}{': '}{isPlayground ? tokenName : (sensitiveVisible ? tokenName : '••••')}
             </span>
           )}
           {metaParts.length > 0 && (
