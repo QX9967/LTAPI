@@ -56,6 +56,7 @@ import {
 } from '../../lib/utils'
 import type { LogOtherData } from '../../types'
 import { DetailsDialog } from '../dialogs/details-dialog'
+import { ContentDetailDialog } from '../dialogs/content-detail-dialog'
 import { ModelBadge } from '../model-badge'
 import { useUsageLogsContext } from '../usage-logs-provider'
 
@@ -466,20 +467,21 @@ export function useCommonLogsColumns(isAdmin: boolean): ColumnDef<UsageLog>[] {
   }
 
   columns.push({
-    accessorKey: 'token_name',
+    accessorKey: 'key',
     header: ({ column }) => (
       <DataTableColumnHeader column={column} title={t('Token')} />
     ),
-    cell: function TokenNameCell({ row }) {
+    cell: function TokenKeyCell({ row }) {
       const { sensitiveVisible } = useUsageLogsContext()
       const log = row.original
       if (!isDisplayableLogType(log.type)) return null
 
+      const apiKey = log.key
       const tokenName = log.token_name
-      if (!tokenName) return null
+      if (!apiKey && !tokenName) return null
 
+      const displayKey = sensitiveVisible ? apiKey : '••••'
       const other = parseLogOther(log.other)
-      const displayName = sensitiveVisible ? tokenName : '••••'
       let group = log.group
       if (!group) group = other?.group || ''
 
@@ -490,27 +492,40 @@ export function useCommonLogsColumns(isAdmin: boolean): ColumnDef<UsageLog>[] {
       }
       if (groupRatioText) metaParts.push(groupRatioText)
 
+      const tooltipLines: string[] = []
+      if (apiKey) tooltipLines.push(apiKey)
+      if (tokenName) tooltipLines.push(tokenName)
+
       return (
         <div className='flex max-w-[200px] flex-col gap-0.5'>
           <TooltipProvider delay={300}>
             <Tooltip>
               <TooltipTrigger render={<div className='max-w-full' />}>
                 <StatusBadge
-                  label={displayName}
+                  label={displayKey || tokenName || ''}
                   icon={KeyRound}
-                  copyText={sensitiveVisible ? tokenName : undefined}
+                  copyText={sensitiveVisible ? apiKey : undefined}
                   size='sm'
                   showDot={false}
                   className='border-border/60 bg-muted/30 text-foreground h-6 max-w-full gap-1.5 overflow-hidden rounded-md border px-2 py-0.5 [font-family:var(--font-body)]'
                 />
               </TooltipTrigger>
-              {sensitiveVisible && tokenName.length > 16 && (
+              {sensitiveVisible && tooltipLines.length > 0 && (
                 <TooltipContent side='top' className='max-w-xs break-all'>
-                  {tokenName}
+                  <div className='flex flex-col gap-0.5'>
+                    {tooltipLines.map((line, i) => (
+                      <span key={i}>{line}</span>
+                    ))}
+                  </div>
                 </TooltipContent>
               )}
             </Tooltip>
           </TooltipProvider>
+          {tokenName && apiKey && (
+            <span className='text-muted-foreground/60 truncate [font-family:var(--font-body)] !text-xs'>
+              {sensitiveVisible ? tokenName : '••••'}
+            </span>
+          )}
           {metaParts.length > 0 && (
             <span className='text-muted-foreground/60 truncate [font-family:var(--font-body)] !text-xs'>
               {metaParts.join(' · ')}
@@ -762,6 +777,92 @@ export function useCommonLogsColumns(isAdmin: boolean): ColumnDef<UsageLog>[] {
         )
       },
       meta: { label: t('Cost') },
+    },
+
+    // Request Body column (admin only)
+    {
+      id: 'request_body',
+      accessorFn: (row) => row.request_body || '',
+      header: ({ column }) => (
+        <DataTableColumnHeader column={column} title={t('Request')} />
+      ),
+      cell: function RequestBodyCell({ row }) {
+        const [dialogOpen, setDialogOpen] = useState(false)
+        const log = row.original
+        const content = log.request_body || ''
+
+        if (!content) {
+          return (
+            <span className='text-muted-foreground/40 text-xs'>—</span>
+          )
+        }
+
+        const preview = content.length > 30 ? content.substring(0, 30) + '...' : content
+
+        return (
+          <>
+            <button
+              type='button'
+              className='group max-w-[200px] truncate text-left text-xs text-muted-foreground hover:underline'
+              onClick={() => setDialogOpen(true)}
+              title={t('Click to view request content')}
+            >
+              {preview}
+            </button>
+            <ContentDetailDialog
+              title={t('Request Content')}
+              content={content}
+              open={dialogOpen}
+              onOpenChange={setDialogOpen}
+            />
+          </>
+        )
+      },
+      enableSorting: false,
+      meta: { label: t('Request') },
+    },
+
+    // Response Body column (admin only)
+    {
+      id: 'response_body',
+      accessorFn: (row) => row.response_body || '',
+      header: ({ column }) => (
+        <DataTableColumnHeader column={column} title={t('Response')} />
+      ),
+      cell: function ResponseBodyCell({ row }) {
+        const [dialogOpen, setDialogOpen] = useState(false)
+        const log = row.original
+        const content = log.response_body || ''
+
+        if (!content) {
+          return (
+            <span className='text-muted-foreground/40 text-xs'>—</span>
+          )
+        }
+
+        const preview = content.length > 30 ? content.substring(0, 30) + '...' : content
+
+        return (
+          <>
+            <button
+              type='button'
+              className='group max-w-[200px] truncate text-left text-xs text-muted-foreground hover:underline'
+              onClick={() => setDialogOpen(true)}
+              title={t('Click to view response content')}
+            >
+              {preview}
+            </button>
+            <ContentDetailDialog
+              title={t('Response Content')}
+              content={content}
+              open={dialogOpen}
+              onOpenChange={setDialogOpen}
+            />
+          </>
+        )
+      },
+      enableSorting: false,
+      meta: { label: t('Response') },
     },
 
     {
