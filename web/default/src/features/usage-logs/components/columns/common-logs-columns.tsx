@@ -552,6 +552,46 @@ export function useCommonLogsColumns(isAdmin: boolean): ColumnDef<UsageLog>[] {
     size: 160,
   })
 
+  if (isAdmin) {
+    columns.push({
+      id: 'ip',
+      accessorFn: (row) => row.ip || '',
+      header: ({ column }) => (
+        <DataTableColumnHeader column={column} title='IP' />
+      ),
+      cell: function IpCell({ row }) {
+        const log = row.original
+        if (!isDisplayableLogType(log.type)) return null
+
+        const ip = log.ip
+        if (!ip) {
+          return (
+            <span className='text-muted-foreground/40 text-xs'>—</span>
+          )
+        }
+
+        return (
+          <TooltipProvider delay={300}>
+            <Tooltip>
+              <TooltipTrigger
+                render={
+                  <span className='text-muted-foreground max-w-[120px] truncate font-mono text-xs' />
+                }
+              >
+                {ip}
+              </TooltipTrigger>
+              <TooltipContent side='top'>
+                <span className='font-mono text-xs'>{ip}</span>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+        )
+      },
+      meta: { label: 'IP' },
+      size: 120,
+    })
+  }
+
   columns.push(
     {
       accessorKey: 'model_name',
