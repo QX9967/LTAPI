@@ -292,7 +292,6 @@ func migrateDB() error {
 	if err != nil {
 		return err
 	}
-	// InitStrategyCache() will be called here after Task 2
 	if common.UsingSQLite {
 		if err := ensureSubscriptionPlanTableSQLite(); err != nil {
 			return err

@@ -1,7 +1,7 @@
 package model
 
 import (
-	"time"
+	"github.com/QuantumNous/new-api/common"
 
 	"gorm.io/gorm"
 )
@@ -13,7 +13,6 @@ type Strategy struct {
 	Enabled  bool   `json:"enabled" gorm:"default:true;index"`
 	Priority int    `json:"priority" gorm:"default:0;index"`
 
-	// Difficulty strategy fields
 	ClassifierType      string `json:"classifier_type" gorm:"size:32"`
 	ClassifierChannelId int    `json:"classifier_channel_id"`
 	ClassifierModel     string `json:"classifier_model" gorm:"size:128"`
@@ -23,7 +22,6 @@ type Strategy struct {
 	ClassifierTimeout   int    `json:"classifier_timeout" gorm:"default:3000"`
 	DifficultyModels    string `json:"difficulty_models" gorm:"type:text"`
 
-	// Time strategy fields
 	CronExpr    string `json:"cron_expr" gorm:"size:128"`
 	Timezone    string `json:"timezone" gorm:"size:64"`
 	TimeActions string `json:"time_actions" gorm:"type:text"`
@@ -35,20 +33,20 @@ type Strategy struct {
 
 func (s *Strategy) BeforeCreate(tx *gorm.DB) error {
 	if s.CreatedAt == 0 {
-		s.CreatedAt = time.Now().Unix()
+		s.CreatedAt = common.GetTimestamp()
 	}
 	if s.UpdatedAt == 0 {
-		s.UpdatedAt = time.Now().Unix()
+		s.UpdatedAt = common.GetTimestamp()
 	}
 	return nil
 }
 
 func (s *Strategy) BeforeUpdate(tx *gorm.DB) error {
-	s.UpdatedAt = time.Now().Unix()
+	s.UpdatedAt = common.GetTimestamp()
 	return nil
 }
 
-func (s *Strategy) TableName() string {
+func (Strategy) TableName() string {
 	return "strategies"
 }
 
@@ -65,12 +63,12 @@ type StrategyLog struct {
 
 func (l *StrategyLog) BeforeCreate(tx *gorm.DB) error {
 	if l.CreatedAt == 0 {
-		l.CreatedAt = time.Now().Unix()
+		l.CreatedAt = common.GetTimestamp()
 	}
 	return nil
 }
 
-func (l *StrategyLog) TableName() string {
+func (StrategyLog) TableName() string {
 	return "strategy_logs"
 }
 
